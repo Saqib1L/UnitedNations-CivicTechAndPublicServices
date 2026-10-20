@@ -1,0 +1,40 @@
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: estate
+      POSTGRES_PASSWORD: estate_demo
+      POSTGRES_DB: estate
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U estate"]
+      interval: 3s
+      retries: 15
+  api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    environment:
+      DATABASE_URL: postgresql+psycopg://estate:estate_demo@db:5432/estate
+      DATA_DIR: /app/data
+    volumes:
+      - uploads:/app/data
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      API_URL: http://api:8000
+    depends_on:
+      - api
+    ports:
+      - "3000:3000"
+volumes:
+  postgres_data:
+  uploads:

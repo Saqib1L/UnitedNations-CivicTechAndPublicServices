@@ -1,0 +1,26 @@
+{
+  "name": "estate-unlock",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --hostname 0.0.0.0",
+    "build": "next build",
+    "start": "next start --hostname 0.0.0.0",
+    "typecheck": "tsc --noEmit",
+    "format": "prettier --write app components lib next.config.ts tsconfig.json"
+  },
+  "dependencies": {
+    "lucide-react": "^0.577.0",
+    "motion": "^12.35.0",
+    "next": "^16.1.6",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "prettier": "^3.9.10",
+    "typescript": "^5.9.3"
+  }
+}
