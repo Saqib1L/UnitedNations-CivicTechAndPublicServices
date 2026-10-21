@@ -1,6 +1,6 @@
 # Estate Unlock — implementation design
 
-This local proof of concept follows the agreed lawyer-led design and `design-skill-command.md`. All people, documents and processing outcomes in the seed dataset are fictional.
+This local proof of concept follows the agreed lawyer-led workflow. Its interface prioritises the next task, is informed by MYDS principles and uses familiar public-service patterns from GOV.UK, with W3C accessibility targets and restrained feedback from `design-skill-command.md`. See [UI guidelines and primary sources](ui-guidelines.md), [architecture](architecture.md), [API operations](api.md) and [demo guide](demo-guide.md). All people, documents and processing outcomes in the seed dataset are fictional.
 
 ## Service blueprint
 
@@ -46,26 +46,27 @@ Authentication role is separate from estate membership. Officers must have an as
 
 ## Screen map and wireframes
 
-- Sign-in/register: contextual introduction, two entry paths, demo account credential launcher.
-- Family: overview, assigned tasks, documents, assets, updates; enquiry wizard with draft saving.
-- Law firm: dashboard, public enquiries, cases, notifications; case tabs for overview, people, inventory, documents, tasks, applications, fees, history.
-- Agency: assigned-application queue, submitted documents, queries, hearings, simulated decisions, history.
+- Sign-in/register: simple form, clear family registration link, invitation acceptance and optional demo-account shortcuts.
+- Family: global navigation has Your estates and Updates. Estate cards show task count and one View estate action; saved enquiries can be resumed. Inside a case, wrapped navigation links to Overview, My tasks, Documents, Assets and Updates. The overview leads with next action/actor, shows an appointment only when scheduled, and keeps full process stages and family facts in named disclosures.
+- Law firm: work queue, public enquiries, cases and notifications; case sections retain people, inventory, documents, tasks, applications, fees and history without decorative dashboard panels.
+- Agency: assigned-application queue, submitted documents, queries, hearings, simulated decisions and history. Publication boundaries and revision history remain visible during review.
+
+These wireframes describe information priority, not a pixel specification. Case sections use ordinary wrapped navigation with a current-page indicator, rather than horizontally scrolling tabs. Optional disclosures must not hide required actions or relevant appointments. Sign-in is one column; Try a demo account expands the credential launcher.
 
 ```text
-DESKTOP WORKSPACE
+PROFESSIONAL WORKSPACE
 ┌──────────────┬─────────────────────────────────────────────────┐
 │ Brand        │ Workspace / Case              EN  Notifications │
 │ Organisation ├─────────────────────────────────────────────────┤
 │              │ Page title                         Primary task │
 │ Navigation   │ Context / current status                        │
 │              ├─────────────────────────────────────────────────┤
-│              │ Section tabs                                    │
-│              │ Journey: Prepare → Review → Submit → … → Release│
-│              │ ACTION NEEDED: task / person / evidence / button │
+│              │ Relevant queue or selected case section         │
+│              │ NEXT ACTION: task / person / evidence / button   │
 │              ├────────────────────────────┬────────────────────┤
-│              │ Asset inventory / evidence │ Case facts         │
-│ Guidance     │                            │ Next appointment   │
-│ Account      │ Dated activity history     │ Next legal action  │
+│              │ Focused review / inventory │ Needed case facts  │
+│ Guidance     │ or submitted evidence      │ Next appointment   │
+│ Account      │ More context on request    │ Revision / status  │
 └──────────────┴────────────────────────────┴────────────────────┘
 
 DOCUMENT REVIEW
@@ -80,13 +81,15 @@ MOBILE FAMILY VIEW
 ┌─────────────────────────┐
 │ Menu  Case       EN Bell│
 │ Estate / current stage │
-│ Scrollable section tabs│
-│ Six-stage journey      │
-│ Your next action       │
-│ Assets and progress    │
-│ Activity               │
-│ Appointment and facts  │
+│ What you need to do    │
+│ Request / owner        │
+│ [One main action]      │
+│ Next appointment*      │
+│ Tasks Documents Assets │
+│ > Full process detail  │
+│ > More case context    │
 └─────────────────────────┘
+* When scheduled
 ```
 
 ## State models
@@ -117,9 +120,13 @@ The automated browser walkthrough validates the connected journeys at desktop si
 
 ## Design foundation
 
-System fonts and restrained navy/teal establish a calm service workspace. Translucent navigation and modal chrome establish depth; solid document surfaces preserve readability. The main actionable request dominates family case views. Professional views use compact queues and split review panels.
+[MYDS design principles](https://design.digital.gov.my/en/docs/design), the [centred login template](https://design.digital.gov.my/en/docs/develop/login) and [accessibility guidance](https://design.digital.gov.my/en/docs/develop/accessibility) provide the local reference for simplicity, consistency and inclusive controls (accessed 21 October 2026). Estate Unlock is informed by these principles; it keeps its existing component implementation, system fonts and own branding. It does not claim full MYDS compliance or represent an official government service.
 
-Motion uses interruptible no-bounce springs for route/modal arrival; CSS press feedback starts immediately. There are no mandatory gestures, autoplay sound or decorative looping motion. Focus is trapped in dialogs and restored on exit. Motion, transparency and contrast preferences have explicit CSS handling.
+The interface follows [task lists](https://design-system.service.gov.uk/components/task-list/), [clear primary actions](https://design-system.service.gov.uk/components/button/) and [optional details](https://design-system.service.gov.uk/components/details/) from the GOV.UK Design System (accessed 21 October 2026). Family pages answer: where are we, what do I need to do, who acts next and what remains? Start with current stage and next task. Keep detailed journey/history available without displaying every section at once. Essential corrections, appointments and remaining asset work stay visible.
+
+System fonts, restrained navy accents, solid light surfaces and subtle borders support scanning. Professional views keep useful queues and split evidence review. Decorative hero sections, repeated metric cards and competing filled buttons should not dominate working screens. Explain legal terms in the task context and use action-specific button labels. Plain, readable service patterns take precedence over decorative effects when applying the repo's design skill.
+
+Immediate press/pending feedback remains useful. Motion should be brief, optional and respect reduced-motion preferences; no gesture or animation is required to understand the process. Dialogs keep focus contained and restore it on exit. Visible labels, keyboard focus, contrast and mobile reflow are review targets documented in [UI guidelines](ui-guidelines.md), not a claim of a completed WCAG audit.
 
 ## Prototype limits
 

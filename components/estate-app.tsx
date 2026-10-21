@@ -61,6 +61,7 @@ import {
   type CaseRecord,
   type Document,
 } from "@/lib/api";
+import { FamilyHome, FamilyCaseOverview } from "./family-workspace";
 import {
   Logo,
   Badge,
@@ -362,11 +363,8 @@ export default function EstateApp() {
     lawyer = user.role === "lawyer";
   const nav = family
     ? [
-        ["Dashboard", LayoutDashboard, "Overview"],
-        ["My tasks", ListTodo, "My tasks"],
-        ["Documents", FileText, "Documents"],
-        ["Assets", Wallet, "Assets"],
-        ["Updates", Bell, "Updates"],
+        ["Dashboard", FolderOpen, "Your estates"],
+        ["Notifications", Bell, "Updates"],
       ]
     : officer
       ? [
@@ -418,6 +416,34 @@ export default function EstateApp() {
     )
       openCase(primaryEstate.id, label);
     else navigate(label);
+  };
+  const editFamilyInformation = () => {
+    if (!detail) return;
+    ask({
+      title: "Update family information",
+      description:
+        "Record what is known and flag anything that needs professional review.",
+      fields: [
+        { key: "story", label: "Circumstances", type: "textarea" },
+        {
+          key: "family",
+          label: "Known family and relationships",
+          type: "textarea",
+        },
+        { key: "assets", label: "Known asset information", type: "textarea" },
+        { key: "documents", label: "Known documents" },
+        { key: "nomination", label: "Will or nomination information" },
+      ].map((field) => ({
+        ...field,
+        value: detail.estate.details[field.key] || "",
+      })),
+      submit: "Save information",
+      run: async (values) => {
+        await api(`/cases/${caseId}/details`, "PUT", { data: values });
+        await refresh(caseId);
+        notify("Family information saved");
+      },
+    });
   };
   const showTask = (r: CaseRecord) => (
     <div className="task-row" key={r.id}>
@@ -535,6 +561,9 @@ export default function EstateApp() {
 
   return (
     <div className={`app-shell ${family ? "family-mode" : ""}`}>
+      <a className="skip-link" href="#main-content">
+        Skip to main content
+      </a>
       {mobileNav && (
         <div className="nav-scrim" onClick={() => setMobileNav(false)} />
       )}
@@ -573,7 +602,6 @@ export default function EstateApp() {
                   : "Legal workspace"}
             </small>
           </span>
-          <ChevronDown size={14} />
         </div>
         <span className="nav-label">
           {family ? "YOUR WORKSPACE" : "WORKSPACE"}
@@ -583,12 +611,13 @@ export default function EstateApp() {
             const NavIcon = Icon as typeof Home;
             const selected = caseId
               ? family
-                ? tab === key
+                ? key === "Dashboard"
                 : key === "Cases" || key === "Applications"
               : view === key;
             return (
               <button
                 key={key as string}
+                aria-current={selected ? "page" : undefined}
                 className={`nav-item ${selected ? "selected" : ""}`}
                 onClick={() =>
                   family
@@ -616,16 +645,6 @@ export default function EstateApp() {
           })}
         </nav>
         <div className="sidebar-bottom">
-          <div className="sidebar-help">
-            <span className="help-orbit">
-              <ShieldCheck size={22} />
-            </span>
-            <strong>A little guidance goes a long way.</strong>
-            <p>Understand every step of the estate journey.</p>
-            <button onClick={() => setInfo(true)}>
-              Explore guidance <ArrowUpRight size={14} />
-            </button>
-          </div>
           <button className="nav-item" onClick={() => setInfo(true)}>
             <CircleHelp size={18} />
             {t("Help & guidance")}
@@ -658,9 +677,7 @@ export default function EstateApp() {
             >
               <Menu size={20} />
             </button>
-            <span className="muted">Workspace</span>
-            <ChevronRight size={13} />
-            <span>{headerTitle}</span>
+            <span>{family && !caseId ? t("Your estates") : headerTitle}</span>
           </div>
           <div className="topbar-tools">
             <span className="demo-pill">
@@ -735,66 +752,69 @@ export default function EstateApp() {
                           : `Managed by ${detail.lawyer.name} · ${detail.lawyer.organisation}`
                       }
                       action={
-                        <div className="button-row">
-                          <a
-                            className="btn secondary"
-                            href={`/api/cases/${caseId}/summary`}
-                          >
-                            <Download size={16} />
-                            {t("Download summary")}
-                          </a>
-                          {lawyer && (
-                            <Button
-                              onClick={() =>
-                                ask({
-                                  title: "Invite a family member",
-                                  description:
-                                    "Create a private link for the invited email. No email is sent in this demo.",
-                                  fields: [
-                                    {
-                                      key: "email",
-                                      label: "Email address",
-                                      type: "email",
-                                      required: true,
-                                    },
-                                    {
-                                      key: "coordinator",
-                                      label: "Case role",
-                                      type: "select",
-                                      options: [
-                                        {
-                                          value: "false",
-                                          label: "Family member",
-                                        },
-                                        {
-                                          value: "true",
-                                          label: "Family coordinator",
-                                        },
-                                      ],
-                                    },
-                                  ],
-                                  submit: "Create invitation",
-                                  run: async (v) => {
-                                    const inv = await mutate(
-                                      `/cases/${caseId}/invitations`,
-                                      {
-                                        email: v.email,
-                                        coordinator: v.coordinator === "true",
-                                      },
-                                      "Invitation created",
-                                    );
-                                    setInviteLink(
-                                      `${location.origin}/?invite=${inv.token}`,
-                                    );
-                                  },
-                                })
-                              }
+                        !family && (
+                          <div className="button-row">
+                            <a
+                              className="btn secondary"
+                              href={`/api/cases/${caseId}/summary`}
                             >
-                              <Plus size={16} />
-                              {t("Invite family")}
-                            </Button>
-                          )}
-                        </div>
+                              <Download size={16} />
+                              {t("Download summary")}
+                            </a>
+                            {lawyer && (
+                              <Button
+                                kind="secondary"
+                                onClick={() =>
+                                  ask({
+                                    title: "Invite a family member",
+                                    description:
+                                      "Create a private link for the invited email. No email is sent in this demo.",
+                                    fields: [
+                                      {
+                                        key: "email",
+                                        label: "Email address",
+                                        type: "email",
+                                        required: true,
+                                      },
+                                      {
+                                        key: "coordinator",
+                                        label: "Case role",
+                                        type: "select",
+                                        options: [
+                                          {
+                                            value: "false",
+                                            label: "Family member",
+                                          },
+                                          {
+                                            value: "true",
+                                            label: "Family coordinator",
+                                          },
+                                        ],
+                                      },
+                                    ],
+                                    submit: "Create invitation",
+                                    run: async (v) => {
+                                      const inv = await mutate(
+                                        `/cases/${caseId}/invitations`,
+                                        {
+                                          email: v.email,
+                                          coordinator: v.coordinator === "true",
+                                        },
+                                        "Invitation created",
+                                      );
+                                      setInviteLink(
+                                        `${location.origin}/?invite=${inv.token}`,
+                                      );
+                                    },
+                                  })
+                                }
+                              >
+                                <Plus size={16} />
+                                {t("Invite family")}
+                              </Button>
+                            )}
+                          </div>
+                        )
                       }
                     />
                     <div className="case-status-line">
@@ -811,16 +831,11 @@ export default function EstateApp() {
                           : "Progress follows recorded actions and evidence"}
                       </span>
                     </div>
-                    <div
-                      className="case-tabs"
-                      role="tablist"
-                      aria-label="Case sections"
-                    >
+                    <nav className="case-tabs" aria-label="Case sections">
                       {tabs.map((s) => (
                         <button
                           key={s}
-                          role="tab"
-                          aria-selected={currentTab === s}
+                          aria-current={currentTab === s ? "page" : undefined}
                           className={currentTab === s ? "active" : ""}
                           onClick={() => {
                             setTab(s);
@@ -845,396 +860,353 @@ export default function EstateApp() {
                             )}
                         </button>
                       ))}
-                    </div>
-                    {["Overview", "Summary"].includes(currentTab) && (
-                      <>
-                        <div className="panel journey-panel">
-                          <div className="panel-heading">
-                            <h2>{t("Case journey")}</h2>
-                            <span className="tiny muted">
-                              {detail.estate.stage === 6
-                                ? "Complete"
-                                : `Stage ${detail.estate.stage + 1} of 6`}
-                            </span>
-                          </div>
-                          <Stepper
-                            stage={detail.estate.stage}
-                            labels={stages.map(t)}
-                          />
-                        </div>
-                        {tasks.find((r) => r.data.status !== "completed") && (
-                          <div className="action-banner">
-                            <span className="action-symbol">
-                              <AlertCircle size={22} />
-                            </span>
-                            <div>
-                              <span className="eyebrow">
-                                {t("Next action")}
+                    </nav>
+                    {family && currentTab === "Overview" && (
+                      <FamilyCaseOverview
+                        detail={detail}
+                        userId={user.id}
+                        onSection={setTab}
+                        onEdit={editFamilyInformation}
+                        t={t}
+                      />
+                    )}
+                    {!family &&
+                      ["Overview", "Summary"].includes(currentTab) && (
+                        <>
+                          <div className="panel journey-panel">
+                            <div className="panel-heading">
+                              <h2>{t("Case journey")}</h2>
+                              <span className="tiny muted">
+                                {detail.estate.stage === 6
+                                  ? "Complete"
+                                  : `Stage ${detail.estate.stage + 1} of 6`}
                               </span>
-                              <h3>
-                                {
-                                  tasks.find(
-                                    (r) => r.data.status !== "completed",
-                                  )!.data.title
-                                }
-                              </h3>
-                              <p>
-                                {
-                                  tasks.find(
-                                    (r) => r.data.status !== "completed",
-                                  )!.data.description
-                                }
-                              </p>
                             </div>
-                            <Button
-                              kind="secondary"
-                              onClick={() =>
-                                setTab(family ? "My tasks" : "Tasks")
-                              }
-                            >
-                              View request <ArrowRight size={16} />
-                            </Button>
+                            <Stepper
+                              stage={detail.estate.stage}
+                              labels={stages.map(t)}
+                            />
                           </div>
-                        )}
-                        <div className="content-columns">
-                          <div>
-                            <section className="panel">
-                              <div className="panel-heading">
-                                <h2>{t("Asset progress")}</h2>
-                                <span className="tiny muted">
+                          {tasks.find((r) => r.data.status !== "completed") && (
+                            <div className="action-banner">
+                              <span className="action-symbol">
+                                <AlertCircle size={22} />
+                              </span>
+                              <div>
+                                <span className="eyebrow">
+                                  {t("Next action")}
+                                </span>
+                                <h3>
                                   {
-                                    assets.filter(
-                                      (a) => a.data.status === "released",
-                                    ).length
-                                  }{" "}
-                                  of {assets.length} released
-                                </span>
+                                    tasks.find(
+                                      (r) => r.data.status !== "completed",
+                                    )!.data.title
+                                  }
+                                </h3>
+                                <p>
+                                  {
+                                    tasks.find(
+                                      (r) => r.data.status !== "completed",
+                                    )!.data.description
+                                  }
+                                </p>
                               </div>
-                              {officer ? (
-                                <SnapshotSummary submission={latest} />
-                              ) : assets.length ? (
-                                assets.map((a) => {
-                                  const Icon = assetIcon(a.data.type);
-                                  return (
-                                    <div className="asset-compact" key={a.id}>
-                                      <span className="asset-icon">
-                                        <Icon size={20} />
-                                      </span>
-                                      <div className="grow">
-                                        <strong>{a.data.name}</strong>
-                                        <p>
-                                          {a.data.type} · {money(a.data.value)}
-                                        </p>
+                              <Button
+                                kind="secondary"
+                                onClick={() =>
+                                  setTab(family ? "My tasks" : "Tasks")
+                                }
+                              >
+                                View request <ArrowRight size={16} />
+                              </Button>
+                            </div>
+                          )}
+                          <div className="content-columns">
+                            <div>
+                              <section className="panel">
+                                <div className="panel-heading">
+                                  <h2>{t("Asset progress")}</h2>
+                                  <span className="tiny muted">
+                                    {
+                                      assets.filter(
+                                        (a) => a.data.status === "released",
+                                      ).length
+                                    }{" "}
+                                    of {assets.length} released
+                                  </span>
+                                </div>
+                                {officer ? (
+                                  <SnapshotSummary submission={latest} />
+                                ) : assets.length ? (
+                                  assets.map((a) => {
+                                    const Icon = assetIcon(a.data.type);
+                                    return (
+                                      <div className="asset-compact" key={a.id}>
+                                        <span className="asset-icon">
+                                          <Icon size={20} />
+                                        </span>
+                                        <div className="grow">
+                                          <strong>{a.data.name}</strong>
+                                          <p>
+                                            {a.data.type} ·{" "}
+                                            {money(a.data.value)}
+                                          </p>
+                                        </div>
+                                        <Badge tone={tone(a.data.status)}>
+                                          {human(a.data.status)}
+                                        </Badge>
                                       </div>
-                                      <Badge tone={tone(a.data.status)}>
-                                        {human(a.data.status)}
-                                      </Badge>
+                                    );
+                                  })
+                                ) : (
+                                  <Empty
+                                    title="Start the asset inventory"
+                                    description="Add the property, accounts and other interests involved in the estate."
+                                  />
+                                )}
+                                <div className="panel-footer">
+                                  <span className="tiny muted">
+                                    {officer
+                                      ? "Submission snapshot · no live private case access"
+                                      : "An order is a milestone. Actual releases finish the journey."}
+                                  </span>
+                                  {!officer && (
+                                    <button
+                                      className="text-link"
+                                      onClick={() =>
+                                        setTab(
+                                          family
+                                            ? "Assets"
+                                            : "Assets & liabilities",
+                                        )
+                                      }
+                                    >
+                                      View assets <ArrowRight size={14} />
+                                    </button>
+                                  )}
+                                </div>
+                              </section>
+                              {!officer && (
+                                <section className="panel">
+                                  <div className="panel-heading">
+                                    <h2>Family intake</h2>
+                                    {detail.is_coordinator && (
+                                      <button
+                                        className="text-link"
+                                        onClick={editFamilyInformation}
+                                      >
+                                        Update details <ArrowRight size={14} />
+                                      </button>
+                                    )}
+                                  </div>
+                                  <div className="intake-summary">
+                                    <p>
+                                      {detail.estate.details.story ||
+                                        "Add the circumstances so your lawyer can prepare the right next steps."}
+                                    </p>
+                                    {detail.estate.details.family && (
+                                      <p>
+                                        <strong>Family:</strong>{" "}
+                                        {detail.estate.details.family}
+                                      </p>
+                                    )}
+                                    {detail.estate.details.assets && (
+                                      <p>
+                                        <strong>Assets:</strong>{" "}
+                                        {detail.estate.details.assets}
+                                      </p>
+                                    )}
+                                    <div className="tiny muted">
+                                      Information is supplied by the family and
+                                      requires professional review.
                                     </div>
-                                  );
-                                })
-                              ) : (
-                                <Empty
-                                  title="Start the asset inventory"
-                                  description="Add the property, accounts and other interests involved in the estate."
-                                />
+                                  </div>
+                                </section>
                               )}
-                              <div className="panel-footer">
-                                <span className="tiny muted">
-                                  {officer
-                                    ? "Submission snapshot · no live private case access"
-                                    : "An order is a milestone. Actual releases finish the journey."}
-                                </span>
-                                {!officer && (
+                              <section className="panel">
+                                <div className="panel-heading">
+                                  <h2>{t("Latest activity")}</h2>
                                   <button
                                     className="text-link"
                                     onClick={() =>
                                       setTab(
-                                        family
-                                          ? "Assets"
-                                          : "Assets & liabilities",
+                                        officer
+                                          ? "History"
+                                          : family
+                                            ? "Updates"
+                                            : "Activity",
                                       )
                                     }
                                   >
-                                    View assets <ArrowRight size={14} />
+                                    View all <ArrowRight size={14} />
                                   </button>
-                                )}
-                              </div>
-                            </section>
-                            {!officer && (
+                                </div>
+                                <Timeline
+                                  records={(records.activity || []).slice(0, 4)}
+                                />
+                              </section>
+                            </div>
+                            <div>
                               <section className="panel">
                                 <div className="panel-heading">
-                                  <h2>Family intake</h2>
-                                  {detail.is_coordinator && (
-                                    <button
-                                      className="text-link"
-                                      onClick={() =>
-                                        ask({
-                                          title: "Update family information",
-                                          description:
-                                            "Record what is known and flag anything that needs professional review.",
-                                          fields: [
-                                            {
-                                              key: "story",
-                                              label: "Circumstances",
-                                              type: "textarea",
-                                              value:
-                                                detail.estate.details.story ||
-                                                "",
-                                            },
-                                            {
-                                              key: "family",
-                                              label:
-                                                "Known family and relationships",
-                                              type: "textarea",
-                                              value:
-                                                detail.estate.details.family ||
-                                                "",
-                                            },
-                                            {
-                                              key: "assets",
-                                              label: "Known asset information",
-                                              type: "textarea",
-                                              value:
-                                                detail.estate.details.assets ||
-                                                "",
-                                            },
-                                            {
-                                              key: "documents",
-                                              label: "Known documents",
-                                              value:
-                                                detail.estate.details
-                                                  .documents || "",
-                                            },
-                                            {
-                                              key: "nomination",
-                                              label:
-                                                "Will or nomination information",
-                                              value:
-                                                detail.estate.details
-                                                  .nomination || "Not sure",
-                                            },
-                                          ],
-                                          submit: "Save information",
-                                          run: async (v) => {
-                                            await api(
-                                              `/cases/${caseId}/details`,
-                                              "PUT",
-                                              { data: v },
-                                            );
-                                            await refresh(caseId);
-                                            notify("Family information saved");
-                                          },
-                                        })
-                                      }
-                                    >
-                                      Update details <ArrowRight size={14} />
-                                    </button>
-                                  )}
+                                  <h2>
+                                    {officer
+                                      ? "Processing actions"
+                                      : "At a glance"}
+                                  </h2>
+                                  <MoreHorizontal size={18} className="muted" />
                                 </div>
-                                <div className="intake-summary">
-                                  <p>
-                                    {detail.estate.details.story ||
-                                      "Add the circumstances so your lawyer can prepare the right next steps."}
-                                  </p>
-                                  {detail.estate.details.family && (
-                                    <p>
-                                      <strong>Family:</strong>{" "}
-                                      {detail.estate.details.family}
-                                    </p>
-                                  )}
-                                  {detail.estate.details.assets && (
-                                    <p>
-                                      <strong>Assets:</strong>{" "}
-                                      {detail.estate.details.assets}
-                                    </p>
-                                  )}
-                                  <div className="tiny muted">
-                                    Information is supplied by the family and
-                                    requires professional review.
+                                <div className="key-values">
+                                  <div>
+                                    <span>Case reference</span>
+                                    <strong>{detail.estate.reference}</strong>
+                                  </div>
+                                  <div>
+                                    <span>Jurisdiction</span>
+                                    <strong>
+                                      {detail.estate.jurisdiction}
+                                    </strong>
+                                  </div>
+                                  <div>
+                                    <span>Route</span>
+                                    <strong>Small estate · demo</strong>
+                                  </div>
+                                  <div>
+                                    <span>Processing office</span>
+                                    <strong>JKPTG · Simulated</strong>
                                   </div>
                                 </div>
-                              </section>
-                            )}
-                            <section className="panel">
-                              <div className="panel-heading">
-                                <h2>{t("Latest activity")}</h2>
-                                <button
-                                  className="text-link"
-                                  onClick={() =>
-                                    setTab(
-                                      officer
-                                        ? "History"
-                                        : family
-                                          ? "Updates"
-                                          : "Activity",
-                                    )
-                                  }
-                                >
-                                  View all <ArrowRight size={14} />
-                                </button>
-                              </div>
-                              <Timeline
-                                records={(records.activity || []).slice(0, 4)}
-                              />
-                            </section>
-                          </div>
-                          <div>
-                            <section className="panel">
-                              <div className="panel-heading">
-                                <h2>
-                                  {officer
-                                    ? "Processing actions"
-                                    : "At a glance"}
-                                </h2>
-                                <MoreHorizontal size={18} className="muted" />
-                              </div>
-                              <div className="key-values">
-                                <div>
-                                  <span>Case reference</span>
-                                  <strong>{detail.estate.reference}</strong>
-                                </div>
-                                <div>
-                                  <span>Jurisdiction</span>
-                                  <strong>{detail.estate.jurisdiction}</strong>
-                                </div>
-                                <div>
-                                  <span>Route</span>
-                                  <strong>Small estate · demo</strong>
-                                </div>
-                                <div>
-                                  <span>Processing office</span>
-                                  <strong>JKPTG · Simulated</strong>
-                                </div>
-                              </div>
-                              <div className="case-commands">
-                                {lawyer && (
-                                  <>
-                                    {detail.estate.stage <= 2 && (
+                                <div className="case-commands">
+                                  {lawyer && (
+                                    <>
+                                      {detail.estate.stage <= 2 && (
+                                        <Button
+                                          kind="secondary"
+                                          disabled={pending}
+                                          onClick={() =>
+                                            act("ready").catch(() => {})
+                                          }
+                                        >
+                                          Complete legal review{" "}
+                                          <Check size={16} />
+                                        </Button>
+                                      )}
+                                      {[2, 3].includes(detail.estate.stage) && (
+                                        <Button
+                                          disabled={pending}
+                                          onClick={() =>
+                                            act("submit").catch(() => {})
+                                          }
+                                        >
+                                          {latest
+                                            ? "Resubmit application"
+                                            : "Submit application"}{" "}
+                                          <Send size={15} />
+                                        </Button>
+                                      )}
+                                      {detail.estate.stage === 4 && (
+                                        <Button
+                                          onClick={() =>
+                                            act("implement").catch(() => {})
+                                          }
+                                        >
+                                          Start asset implementation{" "}
+                                          <ArrowRight size={16} />
+                                        </Button>
+                                      )}
+                                      {detail.estate.stage === 5 && (
+                                        <Button
+                                          onClick={() =>
+                                            act("complete").catch(() => {})
+                                          }
+                                        >
+                                          Reconcile and complete{" "}
+                                          <CheckCircle2 size={16} />
+                                        </Button>
+                                      )}
+                                    </>
+                                  )}
+                                  {officer && detail.estate.stage === 3 && (
+                                    <>
                                       <Button
                                         kind="secondary"
-                                        disabled={pending}
                                         onClick={() =>
-                                          act("ready").catch(() => {})
+                                          caseAction(
+                                            "query",
+                                            "Request a correction",
+                                            [
+                                              {
+                                                key: "reason",
+                                                label:
+                                                  "What needs to be corrected?",
+                                                type: "textarea",
+                                                required: true,
+                                              },
+                                            ],
+                                            "Send query",
+                                          )
                                         }
                                       >
-                                        Complete legal review{" "}
-                                        <Check size={16} />
+                                        Request correction{" "}
+                                        <MessagesSquare size={15} />
                                       </Button>
-                                    )}
-                                    {[2, 3].includes(detail.estate.stage) && (
                                       <Button
-                                        disabled={pending}
-                                        onClick={() =>
-                                          act("submit").catch(() => {})
-                                        }
+                                        kind="secondary"
+                                        onClick={() => setTab("Hearing")}
                                       >
-                                        {latest
-                                          ? "Resubmit application"
-                                          : "Submit application"}{" "}
-                                        <Send size={15} />
+                                        Schedule hearing{" "}
+                                        <CalendarDays size={15} />
                                       </Button>
-                                    )}
-                                    {detail.estate.stage === 4 && (
                                       <Button
-                                        onClick={() =>
-                                          act("implement").catch(() => {})
-                                        }
+                                        onClick={() => setTab("Decision")}
                                       >
-                                        Start asset implementation{" "}
-                                        <ArrowRight size={16} />
+                                        Record decision <ArrowRight size={16} />
                                       </Button>
-                                    )}
-                                    {detail.estate.stage === 5 && (
-                                      <Button
-                                        onClick={() =>
-                                          act("complete").catch(() => {})
-                                        }
-                                      >
-                                        Reconcile and complete{" "}
-                                        <CheckCircle2 size={16} />
-                                      </Button>
-                                    )}
-                                  </>
-                                )}
-                                {officer && detail.estate.stage === 3 && (
-                                  <>
+                                    </>
+                                  )}
+                                  {family && (
                                     <Button
                                       kind="secondary"
-                                      onClick={() =>
-                                        caseAction(
-                                          "query",
-                                          "Request a correction",
-                                          [
-                                            {
-                                              key: "reason",
-                                              label:
-                                                "What needs to be corrected?",
-                                              type: "textarea",
-                                              required: true,
-                                            },
-                                          ],
-                                          "Send query",
-                                        )
-                                      }
+                                      onClick={() => setTab("Documents")}
                                     >
-                                      Request correction{" "}
-                                      <MessagesSquare size={15} />
+                                      View documents <FileText size={16} />
                                     </Button>
-                                    <Button
-                                      kind="secondary"
-                                      onClick={() => setTab("Hearing")}
-                                    >
-                                      Schedule hearing{" "}
-                                      <CalendarDays size={15} />
-                                    </Button>
-                                    <Button onClick={() => setTab("Decision")}>
-                                      Record decision <ArrowRight size={16} />
-                                    </Button>
-                                  </>
-                                )}
-                                {family && (
-                                  <Button
-                                    kind="secondary"
-                                    onClick={() => setTab("Documents")}
-                                  >
-                                    View documents <FileText size={16} />
-                                  </Button>
-                                )}
-                              </div>
-                            </section>
-                            <section className="panel">
-                              <div className="panel-heading">
-                                <h2>Next appointment</h2>
-                                <CalendarDays size={18} className="muted" />
-                              </div>
-                              <div className="appointment">
-                                <span className="calendar-tile">
-                                  <CalendarDays size={24} />
-                                </span>
-                                <strong>
-                                  {records.hearing?.[0]
-                                    ? "Estate hearing"
-                                    : "Awaiting scheduling"}
-                                </strong>
+                                  )}
+                                </div>
+                              </section>
+                              <section className="panel">
+                                <div className="panel-heading">
+                                  <h2>Next appointment</h2>
+                                  <CalendarDays size={18} className="muted" />
+                                </div>
+                                <div className="appointment">
+                                  <span className="calendar-tile">
+                                    <CalendarDays size={24} />
+                                  </span>
+                                  <strong>
+                                    {records.hearing?.[0]
+                                      ? "Estate hearing"
+                                      : "Awaiting scheduling"}
+                                  </strong>
+                                  <p>
+                                    {records.hearing?.[0]
+                                      ? `${dateLabel(records.hearing[0].data.date)} · ${records.hearing[0].data.location}`
+                                      : "Hearing details will appear once the office records an appointment."}
+                                  </p>
+                                </div>
+                              </section>
+                              <div className="trust-note">
+                                <ShieldCheck size={19} />
                                 <p>
-                                  {records.hearing?.[0]
-                                    ? `${dateLabel(records.hearing[0].data.date)} · ${records.hearing[0].data.location}`
-                                    : "Hearing details will appear once the office records an appointment."}
+                                  {officer
+                                    ? "All agency decisions in this workspace are simulations."
+                                    : "Your information is shared only with authorised case participants."}
                                 </p>
                               </div>
-                            </section>
-                            <div className="trust-note">
-                              <ShieldCheck size={19} />
-                              <p>
-                                {officer
-                                  ? "All agency decisions in this workspace are simulations."
-                                  : "Your information is shared only with authorised case participants."}
-                              </p>
                             </div>
                           </div>
-                        </div>
-                      </>
-                    )}
+                        </>
+                      )}
                     {["Documents", "Submitted documents"].includes(
                       currentTab,
                     ) && (
@@ -2049,20 +2021,21 @@ export default function EstateApp() {
                   {view === "Dashboard" && (
                     <>
                       <PageHeading
-                        eyebrow={
+                        title={t(
                           family
-                            ? "YOUR FAMILY WORKSPACE"
+                            ? "Your estates"
                             : officer
-                              ? "AGENCY WORKSPACE"
-                              : "YOUR LEGAL WORKSPACE"
-                        }
-                        title={`${t("Good morning")}, ${user.name.split(" ")[0]}.`}
+                              ? "Application overview"
+                              : "Case overview",
+                        )}
                         description={
                           family
-                            ? t("Your next steps, all in one place.")
+                            ? t(
+                                "See what needs your attention and follow your estate’s progress.",
+                              )
                             : officer
-                              ? "A clear view of every application that needs you."
-                              : "Here’s what’s happening with your estate cases today."
+                              ? "Review assigned applications and respond to outstanding requests."
+                              : "Review your cases and respond to new enquiries."
                         }
                         action={
                           lawyer ? (
@@ -2070,294 +2043,136 @@ export default function EstateApp() {
                               <Plus size={17} />
                               {t("New estate case")}
                             </Button>
-                          ) : family ? (
-                            <Button
-                              kind="secondary"
-                              onClick={() =>
-                                setIntake({ data: {}, status: "draft" })
-                              }
-                            >
-                              <Plus size={17} />
-                              {t("Start an enquiry")}
-                            </Button>
                           ) : undefined
                         }
                       />
-                      <div className="welcome-panel">
-                        <div className="welcome-copy">
-                          <span className="eyebrow">
-                            <span className="little-line" />
-                            {family
-                              ? "ONE FAMILY. ONE SHARED JOURNEY."
-                              : "THOUGHTFUL WORK. MEANINGFUL PROGRESS."}
-                          </span>
-                          <h2>
-                            {family
-                              ? t("A clear path forward.")
-                              : officer
-                                ? "Every decision moves a family forward."
-                                : t("Every family deserves clarity.")}
-                          </h2>
-                          <p>
-                            {family
-                              ? "Your documents, next steps and case updates, brought together. You don’t have to navigate this alone."
-                              : officer
-                                ? "Review the evidence, make the next step clear, and keep everyone informed."
-                                : "Bring the people, paperwork and progress together. Help families move forward, one considered step at a time."}
-                          </p>
-                          <button
-                            className="hero-link"
-                            onClick={() =>
-                              lawyer
-                                ? navigate("Cases")
-                                : officer
-                                  ? navigate("Applications")
-                                  : primaryEstate
-                                    ? openCase(primaryEstate.id)
-                                    : setIntake({ data: {}, status: "draft" })
-                            }
-                          >
-                            {family
-                              ? primaryEstate
-                                ? t("Continue to case")
-                                : t("Start an enquiry")
-                              : officer
-                                ? "View assigned applications"
-                                : "View your cases"}
-                            <ArrowRight size={16} />
-                          </button>
-                        </div>
-                        <div className="welcome-art" aria-hidden="true">
-                          <div className="orbit orbit-one" />
-                          <div className="orbit orbit-two" />
-                          <div className="art-dot dot-one" />
-                          <div className="art-dot dot-two" />
-                          <div className="art-document">
-                            <span className="art-icon">
-                              <ShieldCheck size={28} />
-                            </span>
-                            <div className="art-line" />
-                            <div className="art-line short" />
-                            <div className="art-check">
-                              <span>
-                                <Check size={13} />
-                              </span>
-                              <i />
-                            </div>
-                            <div className="art-check">
-                              <span>
-                                <Check size={13} />
-                              </span>
-                              <i />
-                            </div>
-                            <div className="art-check">
-                              <span className="unfilled" />
-                              <i />
-                            </div>
-                          </div>
-                          <div className="art-float">
-                            <CheckCircle2 size={17} />
-                            <span>A step closer, together.</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="stats-grid">
-                        <Stat
-                          icon={FolderOpen}
-                          label={t(officer ? "Applications" : "Active cases")}
-                          value={
-                            overview.estates.filter((e: Estate) => e.stage < 6)
-                              .length
-                          }
-                          caption={
-                            family
-                              ? "Your shared estate workspaces"
-                              : "Across your workspace"
-                          }
-                          color="blue"
+                      {family ? (
+                        <FamilyHome
+                          estates={overview.estates}
+                          intakes={overview.intakes}
+                          openCase={openCase}
+                          onIntake={setIntake}
+                          t={t}
                         />
-                        <Stat
-                          icon={Clock3}
-                          label={t("Needs attention")}
-                          value={overview.estates.reduce(
-                            (n: number, e: Estate) => n + e.tasks_count,
-                            0,
-                          )}
-                          caption={
-                            family
-                              ? "Requests assigned to you"
-                              : "Open case tasks"
-                          }
-                          color="amber"
-                        />
-                        <Stat
-                          icon={lawyer ? MessagesSquare : CheckCircle2}
-                          label={t(lawyer ? "New enquiries" : "Asset progress")}
-                          value={
-                            lawyer
-                              ? overview.intakes.filter(
-                                  (i: any) => i.status === "submitted",
-                                ).length
-                              : overview.estates.reduce(
-                                  (n: number, e: Estate) =>
-                                    n + e.released_count,
-                                  0,
-                                )
-                          }
-                          caption={
-                            lawyer
-                              ? "Families waiting for a response"
-                              : "Assets with release recorded"
-                          }
-                          color="green"
-                        />
-                      </div>
-                      <div className="dashboard-columns">
-                        <section className="panel">
-                          <div className="panel-heading">
-                            <div>
-                              <h2>
-                                {family
-                                  ? t("Your estate workspace")
-                                  : officer
-                                    ? "Assigned applications"
-                                    : "Active estate cases"}
-                              </h2>
-                              <p className="tiny muted">
-                                {family
-                                  ? "Your family’s information and progress, together."
-                                  : "A shared view of the next step for every family."}
-                              </p>
-                            </div>
-                            <button
-                              className="text-link"
-                              onClick={() =>
-                                navigate(officer ? "Applications" : "Cases")
-                              }
-                            >
-                              {t("View all")}
-                              <ArrowRight size={14} />
-                            </button>
-                          </div>
-                          <CasesTable
-                            estates={overview.estates.slice(0, 4)}
-                            open={openCase}
-                            language={language}
-                          />
-                        </section>
-                        <section className="panel">
-                          <div className="panel-heading">
-                            <h2>{lawyer ? "New enquiries" : "Your updates"}</h2>
-                            <span className="mini-icon">
-                              <Bell size={17} />
-                            </span>
-                          </div>
-                          {lawyer
-                            ? overview.intakes
-                                .filter((i: any) => i.status === "submitted")
-                                .slice(0, 3)
-                                .map((i: any) => (
-                                  <button
-                                    className="enquiry-preview"
-                                    key={i.id}
-                                    onClick={() => navigate("Enquiries")}
-                                  >
-                                    <span className="avatar soft-avatar">
-                                      {initials(i.applicant.name)}
-                                    </span>
-                                    <div className="grow">
-                                      <strong>{i.applicant.name}</strong>
-                                      <p>Estate of {i.data.deceased}</p>
-                                      <span className="tiny muted">
-                                        Awaiting your review
-                                      </span>
-                                    </div>
-                                    <ArrowUpRight size={17} />
-                                  </button>
-                                ))
-                            : overview.notifications
-                                .slice(0, 3)
-                                .map((n: CaseRecord) => (
-                                  <div className="notice-preview" key={n.id}>
-                                    <span className="notice-dot" />
-                                    <div>
-                                      <strong>{n.data.title}</strong>
-                                      <p>{n.data.detail}</p>
-                                    </div>
-                                  </div>
-                                ))}
-                          {(lawyer
-                            ? !overview.intakes.some(
-                                (i: any) => i.status === "submitted",
-                              )
-                            : !overview.notifications.length) && (
-                            <Empty
-                              title={
-                                officer
-                                  ? "Ready when you are"
-                                  : "You’re up to date"
-                              }
-                              description={
-                                officer
-                                  ? "Submitted applications will bring new activity here."
-                                  : "New updates will appear here."
-                              }
-                            />
-                          )}
-                          <div className="panel-footer">
-                            <button
-                              className="text-link"
-                              onClick={() =>
-                                navigate(lawyer ? "Enquiries" : "Notifications")
-                              }
-                            >
-                              {lawyer ? "View enquiries" : "All notifications"}
-                              <ArrowRight size={14} />
-                            </button>
-                          </div>
-                        </section>
-                      </div>
-                      {family && overview.intakes.length > 0 && (
-                        <section className="panel">
-                          <div className="panel-heading">
-                            <h2>Your enquiries</h2>
-                          </div>
-                          {overview.intakes.map((i: any) => (
-                            <div className="submission-row" key={i.id}>
-                              <MessagesSquare size={20} />
-                              <div className="grow">
-                                <strong>
-                                  {i.data.deceased || "Draft estate enquiry"}
-                                </strong>
-                                <p>
-                                  {i.response ||
-                                    "Your assigned lawyer will respond here."}
-                                </p>
+                      ) : (
+                        <>
+                          <div className="dashboard-columns">
+                            <section className="panel">
+                              <div className="panel-heading">
+                                <div>
+                                  <h2>
+                                    {family
+                                      ? t("Your estate workspace")
+                                      : officer
+                                        ? "Assigned applications"
+                                        : "Active estate cases"}
+                                  </h2>
+                                  <p className="tiny muted">
+                                    {family
+                                      ? "Your family’s information and progress, together."
+                                      : "A shared view of the next step for every family."}
+                                  </p>
+                                </div>
+                                <button
+                                  className="text-link"
+                                  onClick={() =>
+                                    navigate(officer ? "Applications" : "Cases")
+                                  }
+                                >
+                                  {t("View all")}
+                                  <ArrowRight size={14} />
+                                </button>
                               </div>
-                              <Badge tone={tone(i.status)}>
-                                {human(i.status)}
-                              </Badge>
-                              {["draft", "information_requested"].includes(
-                                i.status,
-                              ) && (
-                                <Button
-                                  kind="secondary"
-                                  onClick={() => setIntake(i)}
-                                >
-                                  Continue
-                                </Button>
+                              <CasesTable
+                                estates={overview.estates.slice(0, 4)}
+                                open={openCase}
+                                language={language}
+                              />
+                            </section>
+                            <section className="panel">
+                              <div className="panel-heading">
+                                <h2>
+                                  {lawyer ? "New enquiries" : "Your updates"}
+                                </h2>
+                                <span className="mini-icon">
+                                  <Bell size={17} />
+                                </span>
+                              </div>
+                              {lawyer
+                                ? overview.intakes
+                                    .filter(
+                                      (i: any) => i.status === "submitted",
+                                    )
+                                    .slice(0, 3)
+                                    .map((i: any) => (
+                                      <button
+                                        className="enquiry-preview"
+                                        key={i.id}
+                                        onClick={() => navigate("Enquiries")}
+                                      >
+                                        <span className="avatar soft-avatar">
+                                          {initials(i.applicant.name)}
+                                        </span>
+                                        <div className="grow">
+                                          <strong>{i.applicant.name}</strong>
+                                          <p>Estate of {i.data.deceased}</p>
+                                          <span className="tiny muted">
+                                            Awaiting your review
+                                          </span>
+                                        </div>
+                                        <ArrowUpRight size={17} />
+                                      </button>
+                                    ))
+                                : overview.notifications
+                                    .slice(0, 3)
+                                    .map((n: CaseRecord) => (
+                                      <div
+                                        className="notice-preview"
+                                        key={n.id}
+                                      >
+                                        <span className="notice-dot" />
+                                        <div>
+                                          <strong>{n.data.title}</strong>
+                                          <p>{n.data.detail}</p>
+                                        </div>
+                                      </div>
+                                    ))}
+                              {(lawyer
+                                ? !overview.intakes.some(
+                                    (i: any) => i.status === "submitted",
+                                  )
+                                : !overview.notifications.length) && (
+                                <Empty
+                                  title={
+                                    officer
+                                      ? "Ready when you are"
+                                      : "You’re up to date"
+                                  }
+                                  description={
+                                    officer
+                                      ? "Submitted applications will bring new activity here."
+                                      : "New updates will appear here."
+                                  }
+                                />
                               )}
-                              {i.estate_id && (
-                                <Button
-                                  kind="secondary"
-                                  onClick={() => openCase(i.estate_id)}
+                              <div className="panel-footer">
+                                <button
+                                  className="text-link"
+                                  onClick={() =>
+                                    navigate(
+                                      lawyer ? "Enquiries" : "Notifications",
+                                    )
+                                  }
                                 >
-                                  Open case
-                                </Button>
-                              )}
-                            </div>
-                          ))}
-                        </section>
+                                  {lawyer
+                                    ? "View enquiries"
+                                    : "All notifications"}
+                                  <ArrowRight size={14} />
+                                </button>
+                              </div>
+                            </section>
+                          </div>
+                        </>
                       )}
                     </>
                   )}
@@ -2879,32 +2694,6 @@ export default function EstateApp() {
   );
 }
 
-function Stat({
-  icon: Icon,
-  label,
-  value,
-  caption,
-  color,
-}: {
-  icon: typeof Home;
-  label: string;
-  value: number;
-  caption: string;
-  color: string;
-}) {
-  return (
-    <div className="stat-card">
-      <div className="stat-top">
-        <span>{label}</span>
-        <span className={`stat-icon ${color}`}>
-          <Icon size={19} />
-        </span>
-      </div>
-      <strong>{String(value).padStart(2, "0")}</strong>
-      <p>{caption}</p>
-    </div>
-  );
-}
 function CasesTable({
   estates,
   open,
@@ -3494,60 +3283,9 @@ function AuthScreen({
   }, []);
   return (
     <div className="auth-layout">
-      <section className="auth-story">
-        <Logo />
-        <div className="auth-story-content">
-          <Badge tone="glass">FOR THE PEOPLE WHO MATTER</Badge>
-          <h1>
-            A little clarity.
-            <br />A shared journey.
-            <br />
-            <span>A way forward.</span>
-          </h1>
-          <p>
-            Bring families, legal professionals and estate processing together.
-            Every document, every next step, every meaningful update.
-          </p>
-          <div className="auth-progress-card">
-            <div>
-              <span className="success-orbit">
-                <ShieldCheck size={22} />
-              </span>
-              <div>
-                <strong>Estate of Ahmad bin Abdullah</strong>
-                <small>Family workspace · EU-2026-0042</small>
-              </div>
-              <span className="live-dot" />
-            </div>
-            <div className="auth-mini-steps">
-              <span className="complete">
-                <Check size={12} />
-              </span>
-              <i />
-              <span className="complete">
-                <Check size={12} />
-              </span>
-              <i />
-              <span className="current" />
-              <i />
-              <span />
-            </div>
-            <p>
-              <span>One clear next step.</span>
-              <span>One shared source of truth.</span>
-            </p>
-          </div>
-          <div className="auth-trust">
-            <ShieldCheck size={17} />
-            <span>Thoughtful by design. Connected by purpose.</span>
-          </div>
-        </div>
-        <div className="auth-story-footer">
-          ESTATE UNLOCK <span>DESIGNED TO MOVE FAMILIES FORWARD</span>
-        </div>
-      </section>
       <section className="auth-form-side">
         <div className="auth-top">
+          <Logo />
           <span className="demo-pill">
             <span />
             Proof of concept
@@ -3561,14 +3299,10 @@ function AuthScreen({
           </button>
         </div>
         <div className="auth-form-wrap">
-          <div className="eyebrow">YOUR SHARED ESTATE WORKSPACE</div>
-          <h2>
-            {t(mode === "login" ? "Welcome back" : "Create account")}
-            <span className="heading-dot">.</span>
-          </h2>
+          <h1>{t(mode === "login" ? "Sign in" : "Create account")}</h1>
           <p>
             {mode === "login"
-              ? "Sign in to see what’s next and keep things moving."
+              ? "View your estate, respond to requests and follow progress."
               : "Start an enquiry or accept your lawyer’s invitation."}
           </p>
           <div className="auth-mode">
@@ -3661,7 +3395,8 @@ function AuthScreen({
               <ArrowRight size={17} />
             </Button>
           </form>
-          <div className="demo-accounts">
+          <details className="demo-accounts plain-details">
+            <summary>Try a demo account</summary>
             <div className="demo-divider">
               <span>EXPLORE THE DEMO</span>
             </div>
@@ -3692,17 +3427,8 @@ function AuthScreen({
             <p className="tiny muted">
               Choose a role to fill demo credentials, then sign in.
             </p>
-          </div>
+          </details>
           <div className="entry-links">
-            <button
-              onClick={() => {
-                setMode("register");
-                setEmail("");
-                setPassword("");
-              }}
-            >
-              I need help with an estate <ArrowUpRight size={13} />
-            </button>
             <button onClick={() => setShowInvite(!showInvite)}>
               I have an invitation <ArrowUpRight size={13} />
             </button>

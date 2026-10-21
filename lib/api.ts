@@ -104,6 +104,60 @@ export type CaseDetail = {
 };
 
 const malay: Record<string, string> = {
+  "Your estates": "Pusaka anda",
+  "View estate": "Lihat pusaka",
+  "What happens next": "Langkah seterusnya",
+  "Next to act": "Pihak yang bertindak seterusnya",
+  You: "Anda",
+  "No further action": "Tiada tindakan lanjut",
+  "Processing office (demo)": "Pejabat pemprosesan (demo)",
+  "Your lawyer is reviewing your response":
+    "Peguam sedang menyemak maklum balas anda",
+  "No action needed from you right now":
+    "Tiada tindakan diperlukan daripada anda buat masa ini",
+  "This estate is complete": "Urusan pusaka ini selesai",
+  "View request": "Lihat permintaan",
+  "Estate progress": "Kemajuan urusan pusaka",
+  "View assets": "Lihat aset",
+  "See all process stages": "Lihat semua peringkat proses",
+  "Latest update": "Kemas kini terkini",
+  "View all updates": "Lihat semua kemas kini",
+  "Estate and family details": "Maklumat pusaka dan keluarga",
+  "Update family information": "Kemas kini maklumat keluarga",
+  "Your next appointment": "Janji temu seterusnya",
+  "Your enquiries": "Pertanyaan anda",
+  "Draft estate enquiry": "Draf pertanyaan pusaka",
+  "Continue enquiry": "Sambung pertanyaan",
+  "Get help with an estate": "Dapatkan bantuan urusan pusaka",
+  "Get help with another estate": "Dapatkan bantuan bagi pusaka lain",
+  "task in progress.": "tugasan sedang diproses.",
+  "tasks in progress.": "tugasan sedang diproses.",
+  "assets released or registered": "aset dilepaskan atau didaftarkan",
+  of: "daripada",
+  Jurisdiction: "Bidang kuasa",
+  Circumstances: "Keadaan",
+  "Not recorded yet": "Belum direkodkan",
+  "All assets have been released or registered.":
+    "Semua aset telah dilepaskan atau didaftarkan.",
+  "No action needed from you right now. Your lawyer will update you here.":
+    "Tiada tindakan diperlukan buat masa ini. Peguam akan memberi kemas kini di sini.",
+  "Your lawyer is handling the next step. Any requests will appear here.":
+    "Peguam mengurus langkah seterusnya. Sebarang permintaan akan dipaparkan di sini.",
+  "The application is with the processing office. Any requests will appear here.":
+    "Permohonan berada di pejabat pemprosesan. Sebarang permintaan akan dipaparkan di sini.",
+  "The order is issued. Asset claims still need to be completed.":
+    "Perintah telah dikeluarkan. Tuntutan aset masih perlu diselesaikan.",
+  "Updates from your lawyer will appear here.":
+    "Kemas kini daripada peguam akan dipaparkan di sini.",
+  "See what needs your attention and follow your estate’s progress.":
+    "Lihat perkara yang memerlukan perhatian dan ikuti kemajuan urusan pusaka anda.",
+  "Tell us what you know. A lawyer will review your enquiry and explain the next steps.":
+    "Kongsikan maklumat yang anda tahu. Peguam akan menyemak pertanyaan dan menerangkan langkah seterusnya.",
+  "Saved. You can finish this later.":
+    "Disimpan. Anda boleh menyelesaikannya kemudian.",
+  "Your lawyer has opened the estate case.":
+    "Peguam telah membuka kes pusaka anda.",
+  "Waiting for the law firm to respond.": "Menunggu maklum balas firma guaman.",
   Dashboard: "Papan pemuka",
   Overview: "Ringkasan",
   Enquiries: "Pertanyaan",

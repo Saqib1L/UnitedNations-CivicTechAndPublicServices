@@ -1,6 +1,19 @@
 # Estate Unlock
 
-A lawyer-led estate-processing proof of concept with family collaboration and a simulated government workspace. Built with Next.js, TypeScript, FastAPI and SQLAlchemy/PostgreSQL. The interface follows the repo's Apple design skill.
+A lawyer-led estate-processing proof of concept with family collaboration and a simulated government workspace. Built with Next.js, TypeScript, FastAPI and SQLAlchemy/PostgreSQL. The interface is informed by [MYDS principles](https://design.digital.gov.my/en/docs/design), uses task-first patterns from GOV.UK and accessibility targets from W3C, and follows the repo's design skill for restrained feedback and system fonts. It uses its own components and branding; it does not claim full MYDS compliance or official government status. Research sources and access dates are in [UI guidelines](docs/ui-guidelines.md).
+
+## Documentation
+
+| Read this | For |
+| --- | --- |
+| [Demo and testing guide](docs/demo-guide.md) | Accounts, both entry paths, the complete role walkthrough, reset and troubleshooting |
+| [Product and service design](docs/product-design.md) | Service blueprint, roles, permissions, screen map, wireframes and acceptance criteria |
+| [UI guidelines and research](docs/ui-guidelines.md) | Design rules, accessibility targets and primary sources |
+| [Application architecture](docs/architecture.md) | Runtime, source map, entities, authentication, state gates and configuration |
+| [API operations](docs/api.md) | Routes, payloads, commands and error conventions |
+| [Verification record](docs/verification.md) | Completed checks and testing limits |
+| [Project brief](estate-unlock-project.md) | Original project context and scope |
+| [Jurisdiction research](inheritance-workflows/README.md) | Process reference material; not executable legal routing |
 
 ## Start with Docker
 

@@ -1,5 +1,15 @@
 # Verification record
 
+## UI simplification — 21 October 2026
+
+The revised task-first interface passed the production build (including TypeScript), all 10 API regression tests and the connected browser walkthrough. The walkthrough additionally checked the family overview's single primary task action, expandable process stages, the waiting-for-review state, and all five family sections at both 320px and 390px without page-wide horizontal overflow. Both entry paths and the full query/resubmission/hearing/order/asset-release journey passed with no browser page errors.
+
+Sign-in, the professional dashboard and the mobile family overview screenshots were visually inspected. A final copy adjustment labels the home-screen count as tasks in progress because it includes responses awaiting lawyer review. The implementation preserves existing data: browser checks used separate temporary SQLite databases. Test servers were stopped automatically afterward. Primary-source design references and the distinction between accessibility targets and verified conformance are documented in [UI guidelines](ui-guidelines.md); no usability study or full accessibility audit is claimed.
+
+The whole-app documentation includes [architecture](architecture.md), [API operations](api.md), [demo/setup/testing](demo-guide.md), and the revised [service design](product-design.md). Local Markdown links and diff whitespace checks passed.
+
+## Initial implementation — 20 October 2026
+
 Verified on 20 October 2026 with Node.js 25.6, Python 3.12 and Chromium. The local running application used SQLite; Docker Compose is configured for PostgreSQL 17.
 
 | Check | Result |
